@@ -1,0 +1,25 @@
+{
+  "name": "notte-ts-templates",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "*/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "start:all": "npm run start --workspaces --if-present",
+    "clean": "find . -name node_modules -type d -prune -exec rm -rf {} + && find . -name package-lock.json -delete"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "notte-sdk": "^0.0.4",
+    "playwright": "^1.48.2",
+    "zod": "^4.1.9"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,43 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.python-version
+.venv/
+venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+
+# Template state and generated output
+.profile-state.json
+.persona-state.json
+.vault-state.json
+.*-state.json
+downloads/
+downloaded_files/
+downloaded_files.zip
+images/
+output/
+run-outputs/
+debug-runs/
+*.log
+*.tmp
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

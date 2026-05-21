@@ -1,0 +1,23 @@
+# Quotes Author Scraper Exploration
+
+- Session ID: f356f039-60cb-4fcd-8684-a65ed8d3bb43
+- Target: https://quotes.toscrape.com/
+- First session closed after a transient Notte API 502 during initial navigation.
+- Successful session ID: a5a59916-5219-47f5-826b-b5683a0c886c
+- CLI navigation succeeded with:
+  - `notte page goto "https://quotes.toscrape.com/" --session-id a5a59916-5219-47f5-826b-b5683a0c886c --timeout 60`
+  - `notte page observe --session-id a5a59916-5219-47f5-826b-b5683a0c886c`
+  - `notte page scrape --instructions "Extract the visible quotes on this page as JSON. For each quote include text, author name, about link href if visible, and tags." --session-id a5a59916-5219-47f5-826b-b5683a0c886c`
+  - `notte page click "L3" --session-id a5a59916-5219-47f5-826b-b5683a0c886c`
+  - `notte page scrape --instructions "Extract this author profile as JSON with fields name, born_date, born_location, description, and external_links." --session-id a5a59916-5219-47f5-826b-b5683a0c886c`
+  - `notte page click "text=Next" --session-id a5a59916-5219-47f5-826b-b5683a0c886c`
+  - `notte sessions workflow-code --session-id a5a59916-5219-47f5-826b-b5683a0c886c`
+- Exported workflow confirmed the flow: goto home page, scrape visible quotes, click Albert Einstein author link, scrape author profile, go back, inspect pagination links, click Next.
+- Useful selectors:
+  - Quote blocks: `.quote`
+  - Quote text: `.quote .text`
+  - Author name: `.quote .author`
+  - Author link: `.quote span a[href^='/author/']`
+  - Tags: `.quote .tags .tag`
+  - Next page: `li.next a`
+  - Author profile: `.author-title`, `.author-born-date`, `.author-born-location`, `.author-description`
