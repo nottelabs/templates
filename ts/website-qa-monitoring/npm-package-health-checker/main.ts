@@ -146,7 +146,7 @@ async function main() {
 
   const client = new NotteClient({ apiKey });
 
-  const report = await client.Session({ idle_timeout_minutes: 3 }).use(async (session) => {
+  const report = await client.Session({ idle_timeout_minutes: 3, proxies: true }).use(async (session) => {
     console.log(`Session ID: ${session.getId()}`);
     await printViewerUrl(session);
 

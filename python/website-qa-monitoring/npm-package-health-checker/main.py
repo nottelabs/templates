@@ -156,7 +156,7 @@ def run(package_name: str = PACKAGE_NAME) -> dict:
     api_key = os.environ.get("NOTTE_API_KEY")
     client = NotteClient(api_key=api_key) if api_key else NotteClient()
 
-    with client.Session(open_viewer=True, idle_timeout_minutes=3) as session:
+    with client.Session(open_viewer=True, idle_timeout_minutes=3, proxies=True) as session:
         print(f"Session ID: {session.session_id}")
         print_viewer_url(session)
 
