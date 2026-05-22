@@ -24,52 +24,72 @@ from pydantic import BaseModel, Field
 load_dotenv(Path(__file__).with_name(".env"))
 
 ARXIV_HOME_URL = "https://arxiv.org/"
-DEFAULT_SEARCH_QUERY = os.environ.get("SEARCH_QUERY", "openai")
-DEFAULT_RESULT_LIMIT = int(os.environ.get("RESULT_LIMIT", "5"))
+ARXIV_AI_LINK_SELECTOR = 'internal:role=link[name="Computing Research Repository Artificial Intelligence"i]'
+DEFAULT_CATEGORY = "cs.AI"
 DEFAULT_RESULT_INDEX = int(os.environ.get("RESULT_INDEX", "1"))
 DEFAULT_DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "./downloads/arxiv")
-USE_PROXY = os.environ.get("USE_PROXY", "false").lower() in {"1", "true", "yes"}
 FORCE_DOWNLOAD = os.environ.get("FORCE_DOWNLOAD", "true").lower() in {"1", "true", "yes"}
 
-SEARCH_RESULT_JS = """
+RECENT_LIST_RESULT_JS = """
 (resultIndex) => {
-  const resultItems = Array.from(document.querySelectorAll("li.arxiv-result"));
-  const absLinks = Array.from(document.querySelectorAll("a[href*='/abs/']"));
-  const item = resultItems[resultIndex] || absLinks[resultIndex]?.closest("li.arxiv-result");
-  const abs = item?.querySelector("p.list-title a[href*='/abs/'], a[href*='/abs/']");
-  if (!abs || !item) {
+  const terms = Array.from(document.querySelectorAll("dl dt"));
+  const term = terms[resultIndex];
+  const details = term?.nextElementSibling?.matches("dd") ? term.nextElementSibling : null;
+  const abs = term?.querySelector("a[href*='/abs/']");
+  if (!abs || !term || !details) {
     return {
       url: location.href,
       error: "selected result not found",
-      available_results: resultItems.length || absLinks.length
+      available_results: terms.length
     };
   }
 
-  const pdf = item.querySelector("a[href*='/pdf/']");
+  const pdf = term.querySelector("a[href*='/pdf/']");
   const abstractUrl = new URL(abs.getAttribute("href"), location.href).href;
   const arxivId =
     abstractUrl.match(/\\/abs\\/([^?#]+)/)?.[1] ||
     abs.textContent.replace(/^\\s*arXiv:\\s*/i, "").trim() ||
     null;
-  const title = item.querySelector("p.title")?.textContent?.replace(/\\s+/g, " ").trim() || null;
-  const abstractSnippet = item.querySelector("span.abstract-full")?.textContent
-    ?.replace(/\\s*△ Less\\s*$/, "")
+  const cleanPrefixed = (selector, prefixPattern) => details.querySelector(selector)?.textContent
+    ?.replace(prefixPattern, "")
     ?.replace(/\\s+/g, " ")
     ?.trim() || null;
 
   return {
     url: location.href,
-    available_results: resultItems.length || absLinks.length,
-    result_count_text: document.querySelector("h1.title")?.textContent.replace(/\\s+/g, " ").trim() || null,
-    title,
-    authors: Array.from(item.querySelectorAll("p.authors a")).map((a) => a.textContent.trim()),
+    available_results: terms.length,
+    result_count_text: document.querySelector("h3")?.textContent.replace(/\\s+/g, " ").trim() || null,
+    title: cleanPrefixed(".list-title", /^\\s*Title:\\s*/i),
+    authors: Array.from(details.querySelectorAll(".list-authors a")).map((a) => a.textContent.trim()),
     arxiv_id: arxivId,
     abstract_url: abstractUrl,
     pdf_url: pdf ? new URL(pdf.getAttribute("href"), location.href).href : abstractUrl.replace("/abs/", "/pdf/"),
-    submitted_date: item.querySelector("p.is-size-7")?.textContent?.replace(/\\s+/g, " ").trim() || null,
-    subjects: Array.from(item.querySelectorAll(".tag")).map((tag) => tag.textContent.trim()),
-    abstract_snippet: abstractSnippet
+    submitted_date: document.querySelector("h3")?.textContent.replace(/\\s+/g, " ").trim() || null,
+    subjects: (cleanPrefixed(".list-subjects", /^\\s*Subjects?:\\s*/i) || "")
+      .split(";")
+      .map((subject) => subject.trim())
+      .filter(Boolean),
+    abstract_snippet: cleanPrefixed(".list-comments", /^\\s*Comments?:\\s*/i)
   };
+}
+"""
+
+OPEN_RECENT_ARTICLE_JS = """
+(resultIndex) => {
+  const links = Array.from(document.querySelectorAll("a[href*='/abs/']"));
+  const first = links[resultIndex];
+  if (!first) {
+    return {
+      ok: false,
+      url: location.href,
+      error: "No abstract links found",
+      available_results: links.length
+    };
+  }
+
+  const href = new URL(first.getAttribute("href"), location.href).href;
+  first.click();
+  return { ok: true, href, text: first.textContent.trim() };
 }
 """
 
@@ -106,15 +126,14 @@ class PaperResult(BaseModel):
     arxiv_id: str | None = Field(None, description="arXiv identifier, for example 2605.07507.")
     abstract_url: str | None = Field(None, description="Link to the abstract page.")
     pdf_url: str | None = Field(None, description="Link to the PDF.")
-    submitted_date: str | None = Field(None, description="Submission date shown in search results.")
+    submitted_date: str | None = Field(None, description="Submission date shown in recent results.")
     subjects: list[str] = Field(default_factory=list, description="arXiv subject tags.")
     abstract_snippet: str | None = Field(None, description="Short visible abstract snippet.")
 
 
 class ArxivSearchReport(BaseModel):
-    query: str = Field("", description="Search query that was submitted.")
-    result_limit: int = Field(0, description="Maximum number of results requested.")
-    result_count_text: str | None = Field(None, description="Visible search result count text.")
+    category: str = Field(DEFAULT_CATEGORY, description="arXiv category that was opened.")
+    result_count_text: str | None = Field(None, description="Visible recent-submissions count text.")
     results: list[PaperResult] = Field(default_factory=list, description="Extracted paper results.")
 
 
@@ -138,11 +157,10 @@ class LocalDownload(BaseModel):
 
 
 class ArxivDownloadReport(BaseModel):
-    query: str = Field("", description="Search query that was submitted.")
-    result_limit: int = Field(0, description="Maximum number of results requested.")
-    result_index: int = Field(1, description="1-based search result index selected for download.")
-    result_count_text: str | None = Field(None, description="Visible search result count text.")
-    selected_result: PaperResult | None = Field(None, description="Selected search result.")
+    category: str = Field(DEFAULT_CATEGORY, description="arXiv category that was opened.")
+    result_index: int = Field(1, description="1-based recent article index selected for download.")
+    result_count_text: str | None = Field(None, description="Visible recent-submissions count text.")
+    selected_result: PaperResult | None = Field(None, description="Selected recent result.")
     article: ArticleDetails | None = Field(
         None, description="Metadata extracted from the article page."
     )
@@ -154,19 +172,7 @@ class ArxivDownloadReport(BaseModel):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Find an arXiv paper and download its PDF with Notte file storage."
-    )
-    parser.add_argument(
-        "query",
-        nargs="?",
-        default=DEFAULT_SEARCH_QUERY,
-        help="Search query. Defaults to SEARCH_QUERY or 'openai'.",
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=DEFAULT_RESULT_LIMIT,
-        help="Number of search results to extract, from 1 to 50. Defaults to RESULT_LIMIT or 5.",
+        description="Open arXiv's AI recent submissions and download a selected paper PDF."
     )
     parser.add_argument(
         "--result-index",
@@ -182,19 +188,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def validate_limit(limit: int) -> int:
-    if limit < 1:
-        raise ValueError("result limit must be at least 1")
-    if limit > 50:
-        raise ValueError("result limit cannot exceed the first arXiv results page size of 50")
-    return limit
-
-
-def validate_result_index(result_index: int, result_limit: int) -> int:
+def validate_result_index(result_index: int) -> int:
     if result_index < 1:
         raise ValueError("result index must be at least 1")
-    if result_index > result_limit:
-        raise ValueError("result index cannot be greater than the result limit")
     return result_index
 
 
@@ -283,8 +279,8 @@ def evaluate_json(session, code: str, *args: Any) -> dict[str, Any]:
     return data
 
 
-def extract_search_result(session, result_index: int) -> tuple[str | None, PaperResult]:
-    data = evaluate_json(session, SEARCH_RESULT_JS, result_index - 1)
+def extract_recent_list_result(session, result_index: int) -> tuple[str | None, PaperResult]:
+    data = evaluate_json(session, RECENT_LIST_RESULT_JS, result_index - 1)
     selected = PaperResult(
         title=data.get("title"),
         authors=data.get("authors") or [],
@@ -296,6 +292,12 @@ def extract_search_result(session, result_index: int) -> tuple[str | None, Paper
         abstract_snippet=data.get("abstract_snippet"),
     )
     return data.get("result_count_text"), selected
+
+
+def open_recent_article(session, result_index: int) -> None:
+    data = evaluate_json(session, OPEN_RECENT_ARTICLE_JS, result_index - 1)
+    if not data.get("ok"):
+        raise RuntimeError(f"{data.get('error', 'could not open recent article')} on {data.get('url')}")
 
 
 def extract_article_details(session, selected_result: PaperResult) -> ArticleDetails:
@@ -345,52 +347,36 @@ def selected_abstract_url(selected_result: PaperResult) -> str:
 
 
 def find_and_download_paper(
-    query: str = DEFAULT_SEARCH_QUERY,
-    result_limit: int = DEFAULT_RESULT_LIMIT,
     result_index: int = DEFAULT_RESULT_INDEX,
     download_dir: str = DEFAULT_DOWNLOAD_DIR,
 ) -> ArxivDownloadReport:
-    query = query.strip()
-    if not query:
-        raise ValueError("search query cannot be empty")
-    result_limit = validate_limit(result_limit)
-    result_index = validate_result_index(result_index, result_limit)
+    result_index = validate_result_index(result_index)
 
     api_key = os.environ.get("NOTTE_API_KEY")
     client = NotteClient(api_key=api_key) if api_key else NotteClient()
     storage = client.FileStorage()
-    report = ArxivDownloadReport(query=query, result_limit=result_limit, result_index=result_index)
+    report = ArxivDownloadReport(result_index=result_index)
 
     with client.Session(
         open_viewer=True,
         idle_timeout_minutes=3,
-        proxies=USE_PROXY,
+        proxies=True,
         storage=storage,
     ) as session:
         print(f"Session ID: {session.session_id}")
         print_viewer_url(session)
-        print(f"Searching arXiv for: {query}")
+        print("Opening arXiv Computing Research Repository Artificial Intelligence...")
 
         session.execute(type="goto", url=ARXIV_HOME_URL)
-        session.execute(type="click", selector='internal:role=link[name="Advanced Search"i]')
-        session.execute(
-            type="fill",
-            selector='internal:role=textbox[name="Search term"s]',
-            value=query,
-        )
-        session.execute(
-            type="click",
-            selector='#terms-fieldset >> internal:role=button[name="Search"i]',
-        )
-        session.execute(type="wait", time_ms=3000)
+        session.execute(type="click", selector=ARXIV_AI_LINK_SELECTOR)
+        session.execute(type="wait", time_ms=1000)
 
-        result_count_text, selected_result = extract_search_result(session, result_index)
+        result_count_text, selected_result = extract_recent_list_result(session, result_index)
         report.result_count_text = result_count_text
         report.selected_result = selected_result
 
-        abstract_url = selected_abstract_url(selected_result)
-        print(f"Opening result {result_index}: {abstract_url}")
-        session.execute(type="goto", url=abstract_url)
+        print(f"Opening recent article {result_index}: {selected_abstract_url(selected_result)}")
+        open_recent_article(session, result_index)
         session.execute(type="wait", time_ms=1000)
 
         report.article = extract_article_details(session, selected_result)
@@ -415,7 +401,7 @@ def find_and_download_paper(
 
 def main() -> None:
     args = parse_args()
-    report = find_and_download_paper(args.query, args.limit, args.result_index, args.download_dir)
+    report = find_and_download_paper(args.result_index, args.download_dir)
     print(json.dumps(report.model_dump(), indent=2, ensure_ascii=False))
 
 
@@ -426,9 +412,8 @@ if __name__ == "__main__":
         print(f"Error downloading an arXiv paper: {err}")
         print("Common fixes:")
         print("  - Set NOTTE_API_KEY in your environment or .env file")
-        print('  - Try a narrower query, for example: uv run main.py "openai" --limit 5')
         print(
-            "  - Use --result-index to choose a different result if the selected paper has no PDF link"
+            "  - Use --result-index to choose a different recent article if the selected paper has no PDF link"
         )
         print("  - Set USE_PROXY=true if arXiv rejects direct browser traffic")
         raise SystemExit(1)

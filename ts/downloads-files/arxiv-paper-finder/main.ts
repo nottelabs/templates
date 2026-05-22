@@ -10,50 +10,68 @@ loadEnv({ path: join(__dirname, ".env") });
 loadEnv({ path: join(__dirname, "..", ".env") });
 
 const ARXIV_HOME_URL = "https://arxiv.org/";
-const DEFAULT_SEARCH_QUERY = process.env.SEARCH_QUERY ?? "openai";
-const DEFAULT_RESULT_LIMIT = Number.parseInt(process.env.RESULT_LIMIT ?? "5", 10);
+const ARXIV_AI_LINK_SELECTOR = 'internal:role=link[name="Computing Research Repository Artificial Intelligence"i]';
+const DEFAULT_CATEGORY = "cs.AI";
 const DEFAULT_RESULT_INDEX = Number.parseInt(process.env.RESULT_INDEX ?? "1", 10);
 const DEFAULT_DOWNLOAD_DIR = process.env.DOWNLOAD_DIR ?? "./downloads/arxiv";
-const USE_PROXY = ["1", "true", "yes"].includes((process.env.USE_PROXY ?? "false").toLowerCase());
 
-const SEARCH_RESULT_JS = `(resultIndex) => {
-  const resultItems = Array.from(document.querySelectorAll("li.arxiv-result"));
-  const absLinks = Array.from(document.querySelectorAll("a[href*='/abs/']"));
-  const item = resultItems[resultIndex] || absLinks[resultIndex]?.closest("li.arxiv-result");
-  const abs = item?.querySelector("p.list-title a[href*='/abs/'], a[href*='/abs/']");
-  if (!abs || !item) {
+const RECENT_LIST_RESULT_JS = `(resultIndex) => {
+  const terms = Array.from(document.querySelectorAll("dl dt"));
+  const term = terms[resultIndex];
+  const details = term?.nextElementSibling?.matches("dd") ? term.nextElementSibling : null;
+  const abs = term?.querySelector("a[href*='/abs/']");
+  if (!abs || !term || !details) {
     return {
       url: location.href,
       error: "selected result not found",
-      available_results: resultItems.length || absLinks.length
+      available_results: terms.length
     };
   }
 
-  const pdf = item.querySelector("a[href*='/pdf/']");
+  const pdf = term.querySelector("a[href*='/pdf/']");
   const abstractUrl = new URL(abs.getAttribute("href"), location.href).href;
   const arxivId =
     abstractUrl.match(/\\/abs\\/([^?#]+)/)?.[1] ||
     abs.textContent.replace(/^\\s*arXiv:\\s*/i, "").trim() ||
     null;
-  const title = item.querySelector("p.title")?.textContent?.replace(/\\s+/g, " ").trim() || null;
-  const abstractSnippet = item.querySelector("span.abstract-full")?.textContent
-    ?.replace(/\\s*\\u25b3 Less\\s*$/, "")
+  const cleanPrefixed = (selector, prefixPattern) => details.querySelector(selector)?.textContent
+    ?.replace(prefixPattern, "")
     ?.replace(/\\s+/g, " ")
     ?.trim() || null;
 
   return {
     url: location.href,
-    available_results: resultItems.length || absLinks.length,
-    result_count_text: document.querySelector("h1.title")?.textContent.replace(/\\s+/g, " ").trim() || null,
-    title,
-    authors: Array.from(item.querySelectorAll("p.authors a")).map((a) => a.textContent.trim()),
+    available_results: terms.length,
+    result_count_text: document.querySelector("h3")?.textContent.replace(/\\s+/g, " ").trim() || null,
+    title: cleanPrefixed(".list-title", /^\\s*Title:\\s*/i),
+    authors: Array.from(details.querySelectorAll(".list-authors a")).map((a) => a.textContent.trim()),
     arxiv_id: arxivId,
     abstract_url: abstractUrl,
     pdf_url: pdf ? new URL(pdf.getAttribute("href"), location.href).href : abstractUrl.replace("/abs/", "/pdf/"),
-    submitted_date: item.querySelector("p.is-size-7")?.textContent?.replace(/\\s+/g, " ").trim() || null,
-    subjects: Array.from(item.querySelectorAll(".tag")).map((tag) => tag.textContent.trim()),
-    abstract_snippet: abstractSnippet
+    submitted_date: document.querySelector("h3")?.textContent.replace(/\\s+/g, " ").trim() || null,
+    subjects: (cleanPrefixed(".list-subjects", /^\\s*Subjects?:\\s*/i) || "")
+      .split(";")
+      .map((subject) => subject.trim())
+      .filter(Boolean),
+    abstract_snippet: cleanPrefixed(".list-comments", /^\\s*Comments?:\\s*/i)
   };
+}`;
+
+const OPEN_RECENT_ARTICLE_JS = `(resultIndex) => {
+  const links = Array.from(document.querySelectorAll("a[href*='/abs/']"));
+  const first = links[resultIndex];
+  if (!first) {
+    return {
+      ok: false,
+      url: location.href,
+      error: "No abstract links found",
+      available_results: links.length
+    };
+  }
+
+  const href = new URL(first.getAttribute("href"), location.href).href;
+  first.click();
+  return { ok: true, href, text: first.textContent.trim() };
 }`;
 
 const ARTICLE_DETAILS_JS = `() => {
@@ -86,7 +104,7 @@ const PaperResult = z.object({
   arxiv_id: z.string().nullable().default(null).describe("arXiv identifier, for example 2605.07507."),
   abstract_url: z.string().nullable().default(null).describe("Link to the abstract page."),
   pdf_url: z.string().nullable().default(null).describe("Link to the PDF."),
-  submitted_date: z.string().nullable().default(null).describe("Submission date shown in search results."),
+  submitted_date: z.string().nullable().default(null).describe("Submission date shown in recent results."),
   subjects: z.array(z.string()).default([]).describe("arXiv subject tags."),
   abstract_snippet: z.string().nullable().default(null).describe("Short visible abstract snippet."),
 });
@@ -109,11 +127,10 @@ const LocalDownload = z.object({
 });
 
 const ArxivDownloadReport = z.object({
-  query: z.string().default("").describe("Search query that was submitted."),
-  result_limit: z.number().default(0).describe("Maximum number of results requested."),
-  result_index: z.number().default(1).describe("1-based search result index selected for download."),
-  result_count_text: z.string().nullable().default(null).describe("Visible search result count text."),
-  selected_result: PaperResult.nullable().default(null).describe("Selected search result."),
+  category: z.string().default(DEFAULT_CATEGORY).describe("arXiv category that was opened."),
+  result_index: z.number().default(1).describe("1-based recent article index selected for download."),
+  result_count_text: z.string().nullable().default(null).describe("Visible recent-submissions count text."),
+  selected_result: PaperResult.nullable().default(null).describe("Selected recent result."),
   article: ArticleDetails.nullable().default(null).describe("Metadata extracted from the article page."),
   downloaded_files: z.array(LocalDownload).default([]).describe("Files downloaded into the local download directory."),
 });
@@ -125,43 +142,24 @@ type ArxivDownloadReport = z.infer<typeof ArxivDownloadReport>;
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  let query = DEFAULT_SEARCH_QUERY;
-  let limit = DEFAULT_RESULT_LIMIT;
   let resultIndex = DEFAULT_RESULT_INDEX;
   let downloadDir = DEFAULT_DOWNLOAD_DIR;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
-    if (arg === "--limit") {
-      limit = Number.parseInt(args[++index] ?? String(limit), 10);
-    } else if (arg === "--result-index") {
+    if (arg === "--result-index") {
       resultIndex = Number.parseInt(args[++index] ?? String(resultIndex), 10);
     } else if (arg === "--download-dir") {
       downloadDir = args[++index] ?? downloadDir;
-    } else if (!arg.startsWith("--")) {
-      query = arg;
     }
   }
 
-  return { query, limit, resultIndex, downloadDir };
+  return { resultIndex, downloadDir };
 }
 
-function validateLimit(limit: number): number {
-  if (!Number.isFinite(limit) || limit < 1) {
-    throw new Error("result limit must be at least 1");
-  }
-  if (limit > 50) {
-    throw new Error("result limit cannot exceed the first arXiv results page size of 50");
-  }
-  return limit;
-}
-
-function validateResultIndex(resultIndex: number, resultLimit: number): number {
+function validateResultIndex(resultIndex: number): number {
   if (!Number.isFinite(resultIndex) || resultIndex < 1) {
     throw new Error("result index must be at least 1");
-  }
-  if (resultIndex > resultLimit) {
-    throw new Error("result index cannot be greater than the result limit");
   }
   return resultIndex;
 }
@@ -226,8 +224,8 @@ async function evaluateJson(session: { execute: (action: any) => Promise<any> },
   return data;
 }
 
-async function extractSearchResult(session: { execute: (action: any) => Promise<any> }, resultIndex: number) {
-  const data = await evaluateJson(session, SEARCH_RESULT_JS, resultIndex - 1);
+async function extractRecentListResult(session: { execute: (action: any) => Promise<any> }, resultIndex: number) {
+  const data = await evaluateJson(session, RECENT_LIST_RESULT_JS, resultIndex - 1);
   const selected = PaperResult.parse({
     title: data.title ?? null,
     authors: data.authors ?? [],
@@ -239,6 +237,13 @@ async function extractSearchResult(session: { execute: (action: any) => Promise<
     abstract_snippet: data.abstract_snippet ?? null,
   });
   return { resultCountText: data.result_count_text ?? null, selected };
+}
+
+async function openRecentArticle(session: { execute: (action: any) => Promise<any> }, resultIndex: number) {
+  const data = await evaluateJson(session, OPEN_RECENT_ARTICLE_JS, resultIndex - 1);
+  if (!data.ok) {
+    throw new Error(`${data.error ?? "could not open recent article"} on ${data.url ?? "current page"}`);
+  }
 }
 
 async function extractArticleDetails(session: { execute: (action: any) => Promise<any> }, selected: PaperResult): Promise<ArticleDetails> {
@@ -280,22 +285,14 @@ async function downloadPdf(pdfUrl: string, article: ArticleDetails, downloadDir:
 }
 
 async function findAndDownloadPaper(
-  query: string,
-  resultLimit: number,
   resultIndex: number,
   downloadDir: string,
 ): Promise<ArxivDownloadReport> {
-  const cleanQuery = query.trim();
-  if (!cleanQuery) {
-    throw new Error("search query cannot be empty");
-  }
-  const limit = validateLimit(resultLimit);
-  const index = validateResultIndex(resultIndex, limit);
+  const index = validateResultIndex(resultIndex);
   const client = new NotteClient({ apiKey: process.env.NOTTE_API_KEY });
 
   const report: ArxivDownloadReport = {
-    query: cleanQuery,
-    result_limit: limit,
+    category: DEFAULT_CATEGORY,
     result_index: index,
     result_count_text: null,
     selected_result: null,
@@ -306,25 +303,18 @@ async function findAndDownloadPaper(
   await client.Session({ idle_timeout_minutes: 3, proxies: true, use_file_storage: true }).use(async (session) => {
     console.log(`Session ID: ${session.getId()}`);
     await printViewerUrl(session);
-    console.log(`Searching arXiv for: ${cleanQuery}`);
+    console.log("Opening arXiv Computing Research Repository Artificial Intelligence...");
 
     await session.execute({ type: "goto", url: ARXIV_HOME_URL });
-    await session.execute({ type: "click", selector: 'internal:role=link[name="Advanced Search"i]', timeout: 15000 });
-    await session.execute({
-      type: "fill",
-      selector: 'internal:role=textbox[name="Search term"s]',
-      value: cleanQuery,
-    });
-    await session.execute({ type: "click", selector: '#terms-fieldset >> internal:role=button[name="Search"i]', timeout: 15000});
-    await session.execute({ type: "wait", time_ms: 3000 });
+    await session.execute({ type: "click", selector: ARXIV_AI_LINK_SELECTOR, timeout: 15000 });
+    await session.execute({ type: "wait", time_ms: 1000 });
 
-    const extracted = await extractSearchResult(session, index);
+    const extracted = await extractRecentListResult(session, index);
     report.result_count_text = extracted.resultCountText;
     report.selected_result = extracted.selected;
 
-    const abstractUrl = selectedAbstractUrl(extracted.selected);
-    console.log(`Opening result ${index}: ${abstractUrl}`);
-    await session.execute({ type: "goto", url: abstractUrl });
+    console.log(`Opening recent article ${index}: ${selectedAbstractUrl(extracted.selected)}`);
+    await openRecentArticle(session, index);
     await session.execute({ type: "wait", time_ms: 1000 });
 
     report.article = await extractArticleDetails(session, extracted.selected);
@@ -342,7 +332,7 @@ async function findAndDownloadPaper(
 
 async function main() {
   const args = parseArgs();
-  const report = await findAndDownloadPaper(args.query, args.limit, args.resultIndex, args.downloadDir);
+  const report = await findAndDownloadPaper(args.resultIndex, args.downloadDir);
   console.log(JSON.stringify(report, null, 2));
 }
 
@@ -350,8 +340,6 @@ main().catch((error: unknown) => {
   console.error(`Error downloading an arXiv paper: ${error instanceof Error ? error.message : String(error)}`);
   console.error("Common fixes:");
   console.error("  - Set NOTTE_API_KEY in your environment or .env file");
-  console.error('  - Try a narrower query, for example: npm start -- "openai" --limit 5');
-  console.error("  - Use --result-index to choose a different result if the selected paper has no PDF link");
-  console.error("  - Set USE_PROXY=true if arXiv rejects direct browser traffic");
+  console.error("  - Use --result-index to choose a different recent article if the selected paper has no PDF link");
   process.exit(1);
 });
