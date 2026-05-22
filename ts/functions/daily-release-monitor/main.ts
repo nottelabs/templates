@@ -148,6 +148,7 @@ export async function run(
       headless: true,
       idle_timeout_minutes: 2,
       max_duration_minutes: 10,
+      open_viewer: true,
     })
     .use(async (session) => {
       if (targetType === "github") {

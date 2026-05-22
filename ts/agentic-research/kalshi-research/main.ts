@@ -32,6 +32,7 @@ async function main() {
   const client = new NotteClient({ apiKey: process.env.NOTTE_API_KEY });
 
   await client.Session({
+    open_viewer: true,
     idle_timeout_minutes: 2,
     proxies: true,
     solve_captchas: true,

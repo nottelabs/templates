@@ -135,6 +135,7 @@ async function browserProbe(client: NotteClient, listingUrl: string): Promise<st
   try {
     return await client
       .Session({
+        open_viewer: true,
         idle_timeout_minutes: 3,
         proxies: USE_PROXY,
         use_file_storage: true,

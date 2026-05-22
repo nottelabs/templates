@@ -300,7 +300,7 @@ async function findAndDownloadPaper(
     downloaded_files: [],
   };
 
-  await client.Session({ idle_timeout_minutes: 3, proxies: true, use_file_storage: true }).use(async (session) => {
+  await client.Session({ open_viewer: true, idle_timeout_minutes: 3, proxies: true, use_file_storage: true }).use(async (session) => {
     console.log(`Session ID: ${session.getId()}`);
     await printViewerUrl(session);
     console.log("Opening arXiv Computing Research Repository Artificial Intelligence...");

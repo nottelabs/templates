@@ -106,7 +106,7 @@ async function main() {
   const client = new NotteClient({ apiKey: process.env.NOTTE_API_KEY });
 
   await client
-    .Session({ idle_timeout_minutes: 2, browser_type: "chromium" })
+    .Session({ open_viewer: true, idle_timeout_minutes: 2, browser_type: "chromium" })
     .use(async (session) => {
       console.log("Notte session initialized successfully");
       console.log(`Session ID: ${session.getId()}`);

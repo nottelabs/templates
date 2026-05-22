@@ -90,7 +90,7 @@ async function run(query = DEFAULT_QUERY, maxResults = DEFAULT_MAX_RESULTS) {
 
   const client = new NotteClient({ apiKey });
 
-  return client.Session({ browser_type: "chrome", idle_timeout_minutes: 3 }).use(async (session) => {
+  return client.Session({ browser_type: "chrome", open_viewer: true, idle_timeout_minutes: 3 }).use(async (session) => {
     console.log(`Session ID: ${session.getId()}`);
     await printViewerUrl(session);
 

@@ -108,7 +108,7 @@ async function scrapeCategory(categoryUrl: string, resultLimit: number) {
     total_item_count_text: null,
   };
 
-  await client.Session({ idle_timeout_minutes: 5, use_file_storage: true }).use(async (session) => {
+  await client.Session({ open_viewer: true, idle_timeout_minutes: 5, use_file_storage: true }).use(async (session) => {
     console.log(`Session ID: ${session.getId()}`);
     await printViewerUrl(session);
 

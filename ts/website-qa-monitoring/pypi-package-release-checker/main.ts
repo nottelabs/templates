@@ -126,6 +126,7 @@ async function checkPackageRelease(packageName: string) {
   const client = new NotteClient({ apiKey });
 
   return client.Session({
+    open_viewer: true,
     idle_timeout_minutes: 2,
     proxies: USE_PROXY,
     use_file_storage: true,

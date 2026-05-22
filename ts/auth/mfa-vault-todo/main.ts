@@ -34,7 +34,7 @@ async function printViewerUrl(session: { status: () => Promise<{ viewer_url?: st
 }
 
 async function extractDemoCredentials(client: NotteClient): Promise<Credentials> {
-  return client.Session({ idle_timeout_minutes: 2 }).use(async (session) => {
+  return client.Session({ open_viewer: true, idle_timeout_minutes: 2 }).use(async (session) => {
     console.log("Opening demo page to extract one-time setup credentials...");
     await printViewerUrl(session);
     await session.execute({ type: "goto", url: DEMO_URL });
@@ -84,6 +84,7 @@ async function main() {
     console.log("Created an ephemeral vault with email, password, and TOTP secret");
 
     await client.Session({
+      open_viewer: true,
       idle_timeout_minutes: 2,
       vault_id: vault.vaultId,
     }).use(async (session) => {

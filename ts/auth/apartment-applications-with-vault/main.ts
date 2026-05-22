@@ -92,6 +92,7 @@ async function run() {
     headless: true,
     idle_timeout_minutes: 3,
     max_duration_minutes: 15,
+    open_viewer: true,
     vault_id: state.vault_id,
   }).use(async (session) => {
     console.log(`Session started: ${session.getId()}`);

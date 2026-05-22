@@ -148,6 +148,7 @@ async function run() {
     headless: true,
     idle_timeout_minutes: 3,
     max_duration_minutes: 15,
+    open_viewer: true,
   }).use(async (session) => {
     await signInWithPersona(session, persona, state);
     await openApplications(session);

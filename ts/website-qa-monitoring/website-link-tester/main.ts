@@ -75,7 +75,7 @@ function deduplicateLinks(links: ExtractedLink[]): ExtractedLink[] {
 async function collectLinksFromHomepage(client: NotteClient): Promise<ExtractedLink[]> {
   console.log("Collecting links from homepage...");
 
-  const links = await client.Session({ idle_timeout_minutes: 2 }).use(async (session) => {
+  const links = await client.Session({ open_viewer: true, idle_timeout_minutes: 2 }).use(async (session) => {
     await printViewerUrl(session, "Collect");
     console.log(`Navigating to ${URL_TO_TEST}...`);
     await session.execute({ type: "goto", url: URL_TO_TEST });
@@ -104,7 +104,7 @@ async function verifySingleLink(client: NotteClient, link: ExtractedLink): Promi
   console.log(`\nChecking: ${link.link_text} (${link.url})`);
 
   try {
-    return await client.Session({ idle_timeout_minutes: 2 }).use(async (session) => {
+    return await client.Session({ open_viewer: true, idle_timeout_minutes: 2 }).use(async (session) => {
       await printViewerUrl(session, link.link_text.slice(0, 30));
       const isSocialLink = SOCIAL_DOMAINS.some((domain) => link.url.includes(domain));
 

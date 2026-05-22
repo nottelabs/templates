@@ -48,6 +48,7 @@ async function main() {
 
   await client
     .Session({
+      open_viewer: true,
       idle_timeout_minutes: 2,
       proxies: true,
       solve_captchas: true,

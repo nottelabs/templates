@@ -33,7 +33,7 @@ function countryProxy(country: string) {
 async function testSession(client: NotteClient, sessionName: string, proxies: boolean | ReturnType<typeof countryProxy>) {
   console.log(`\n=== Testing ${sessionName} ===`);
 
-  await client.Session({ idle_timeout_minutes: 2, proxies: proxies as any }).use(async (session) => {
+  await client.Session({ open_viewer: true, idle_timeout_minutes: 2, proxies: proxies as any }).use(async (session) => {
     console.log(`Session ID: ${session.getId()}`);
     await printViewerUrl(session);
 

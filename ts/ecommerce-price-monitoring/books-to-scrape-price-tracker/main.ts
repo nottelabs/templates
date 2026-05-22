@@ -135,7 +135,7 @@ async function run() {
   const books: BookRecord[] = [];
   let pageUrl: string | null = startUrl;
 
-  await client.Session({ idle_timeout_minutes: 2 }).use(async (session) => {
+  await client.Session({ open_viewer: true, idle_timeout_minutes: 2 }).use(async (session) => {
     console.log("Notte session initialized successfully");
     console.log(`Session ID: ${session.getId()}`);
     await printViewerUrl(session);

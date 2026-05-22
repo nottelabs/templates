@@ -55,6 +55,7 @@ async function getWeatherForLocation(client: NotteClient, location: LocationConf
 
     await client
       .Session({
+        open_viewer: true,
         idle_timeout_minutes: 2,
         proxies: countryProxy(location.proxyCountry) as any,
         viewport_width: 1080,

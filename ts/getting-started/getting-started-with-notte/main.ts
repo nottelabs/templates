@@ -66,7 +66,7 @@ async function demoStructuredInfobox(client: NotteClient) {
     "has label and value text. Do not include article body, references, navigation, " +
     "or unrelated page chrome.";
 
-  await client.Session({ idle_timeout_minutes: 2, use_file_storage: true }).use(async (session) => {
+  await client.Session({ open_viewer: true, idle_timeout_minutes: 2, use_file_storage: true }).use(async (session) => {
     console.log(`Session ID: ${session.getId()}`);
     await printViewerUrl(session);
     console.log(`Opening ${topicUrl}`);
