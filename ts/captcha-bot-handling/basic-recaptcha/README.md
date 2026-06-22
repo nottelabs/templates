@@ -23,7 +23,7 @@ SOLVE_CAPTCHAS=false npm start
 
 ## Challenge flow
 
-- Uses `solve_captchas`, proxy routing, and the Notte `captcha_solve` action.
+- Uses `solve_captchas` and the Notte `captcha_solve` action.
 - Extracts page content with a Zod schema to verify successful form submission.
 - Creates a Notte browser session with CAPTCHA solving enabled.
 - Navigates to NopeCHA's reCAPTCHA V2 demo page.
@@ -40,7 +40,7 @@ Set `NOTTE_API_KEY` in `.env` before running the template.
 ## Captcha and bot notes
 
 - Missing credentials: verify `.env` contains `NOTTE_API_KEY`.
-- Account access: CAPTCHA solving and proxies may need to be enabled for your Notte account.
+- Account access: CAPTCHA solving may need to be enabled for your Notte account.
 - Solving time: allow time for CAPTCHA solving to complete.
 - Demo page changes: update the verification logic if the NopeCHA demo changes.
 

@@ -21,7 +21,7 @@ uv run notte-templates/python/captcha-bot-handling/basic-recaptcha/main.py
 
 ## Challenge flow
 
-- Uses `solve_captchas=True`, proxy routing, and the Notte `captcha_solve` action.
+- Uses `solve_captchas=True` and the Notte `captcha_solve` action.
 - Extracts page content to verify successful form submission.
 - Uses inline `uv` script metadata, so no template-specific `pyproject.toml` is required.
 - Creates a Notte browser session with CAPTCHA solving enabled.
@@ -41,7 +41,7 @@ uv run notte-templates/python/captcha-bot-handling/basic-recaptcha/main.py
 ## Captcha and bot notes
 
 - Missing credentials: verify `.env` contains `NOTTE_API_KEY`.
-- Account access: CAPTCHA solving and proxies may need to be enabled for your Notte account.
+- Account access: CAPTCHA solving may need to be enabled for your Notte account.
 - Solving time: allow time for CAPTCHA solving to complete.
 - Demo page changes: update selectors if the NopeCHA demo page changes.
 

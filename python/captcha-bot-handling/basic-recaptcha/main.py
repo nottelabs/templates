@@ -68,7 +68,7 @@ def main() -> None:
         open_viewer=True,
         idle_timeout_minutes=2,
         solve_captchas=solve_captchas,
-        proxies=True,
+        proxies=False,
         viewport_height=320,
         viewport_width=640,
     ) as session:
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         print(f"Error in reCAPTCHA solving example: {err}")
         print("Common issues:")
         print("  - Check .env has NOTTE_API_KEY")
-        print("  - Verify captcha solving and proxy access are enabled for your Notte account")
+        print("  - Verify captcha solving is enabled for your Notte account")
         print("  - Ensure the demo page is accessible")
         print("Docs: https://docs.notte.cc/")
         exit(1)

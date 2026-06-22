@@ -63,7 +63,7 @@ async function main() {
     open_viewer: true,
     idle_timeout_minutes: 2,
     solve_captchas: SOLVE_CAPTCHAS,
-    proxies: true,
+    proxies: false,
     viewport_height: 320,
     viewport_width: 640,
   }).use(async (session) => {
@@ -108,7 +108,7 @@ main().catch((error: unknown) => {
   console.error(`Error in reCAPTCHA solving example: ${error instanceof Error ? error.message : String(error)}`);
   console.error("Common issues:");
   console.error("  - Check .env has NOTTE_API_KEY");
-  console.error("  - Verify captcha solving and proxy access are enabled for your Notte account");
+  console.error("  - Verify captcha solving is enabled for your Notte account");
   console.error("  - Ensure the demo page is accessible");
   console.error("Docs: https://docs.notte.cc/");
   process.exit(1);
