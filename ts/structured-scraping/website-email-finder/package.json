@@ -1,0 +1,20 @@
+{
+  "name": "notte-website-email-finder-node",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx main.ts",
+    "test": "tsx --test main.test.ts",
+    "typecheck": "tsc --noEmit --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --types node main.ts main.test.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "notte-sdk": "^0.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.4"
+  }
+}
