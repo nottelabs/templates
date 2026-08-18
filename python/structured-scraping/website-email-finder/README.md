@@ -10,29 +10,29 @@ Runtime: Python, entrypoint `main.py`.
 ```bash
 cd python/structured-scraping/website-email-finder
 cp .env.example .env
-uv run main.py https://example.com
+uv run main.py https://www.mobiusdigitalgames.com/
 ```
 
-Add `NOTTE_API_KEY` to `.env` before running. A scheme is optional, so `example.com` also works.
+Add `NOTTE_API_KEY` to `.env` before running. A scheme is optional, so `mobiusdigitalgames.com` also works.
 
 ## Output options
 
 Print only unique email addresses:
 
 ```bash
-uv run main.py https://example.com
+uv run main.py https://www.mobiusdigitalgames.com/
 ```
 
 Return JSON mapping each address to its source pages:
 
 ```bash
-uv run main.py https://example.com --json
+uv run main.py https://www.mobiusdigitalgames.com/ --json
 ```
 
 Show fetched pages and non-fatal errors:
 
 ```bash
-uv run main.py https://example.com --verbose
+uv run main.py https://www.mobiusdigitalgames.com/ --verbose
 ```
 
 ## How it works

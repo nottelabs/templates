@@ -259,6 +259,7 @@ export async function scrape(
 function usage(): string {
   return [
     "Usage: npm start -- <url> [--json] [--verbose]",
+    "Example: npm start -- https://www.mobiusdigitalgames.com/ --json",
     "",
     "Find emails on a page and its likely contact pages.",
     "",

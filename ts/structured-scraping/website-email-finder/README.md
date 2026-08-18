@@ -11,29 +11,29 @@ Runtime: TypeScript, entrypoint `main.ts`.
 cd ts/structured-scraping/website-email-finder
 cp .env.example .env
 npm install --no-package-lock
-npm start -- https://example.com
+npm start -- https://www.mobiusdigitalgames.com/
 ```
 
-Add `NOTTE_API_KEY` to `.env` before running. A scheme is optional, so `example.com` also works.
+Add `NOTTE_API_KEY` to `.env` before running. A scheme is optional, so `mobiusdigitalgames.com` also works.
 
 ## Output options
 
 Print only unique email addresses:
 
 ```bash
-npm start -- https://example.com
+npm start -- https://www.mobiusdigitalgames.com/
 ```
 
 Return JSON mapping each address to its source pages:
 
 ```bash
-npm start -- https://example.com --json
+npm start -- https://www.mobiusdigitalgames.com/ --json
 ```
 
 Show fetched pages and non-fatal errors:
 
 ```bash
-npm start -- https://example.com --verbose
+npm start -- https://www.mobiusdigitalgames.com/ --verbose
 ```
 
 ## How it works
