@@ -35,6 +35,7 @@ CONTACT_HINT_RE = re.compile(
     re.IGNORECASE,
 )
 FALLBACK_PATHS = ("/contact", "/contact-us", "/get-in-touch", "/support")
+DEFAULT_URL = "https://www.mobiusdigitalgames.com/"
 MARKDOWN_LINK_RE = re.compile(r'\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)')
 NON_PAGE_SUFFIXES = {
     ".avi",
@@ -170,7 +171,12 @@ def scrape(start_url: str, verbose: bool = False) -> tuple[dict[str, set[str]], 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Find emails on a page and its likely contact pages.")
-    parser.add_argument("url", help="Website URL, e.g. https://www.mobiusdigitalgames.com/")
+    parser.add_argument(
+        "url",
+        nargs="?",
+        default=DEFAULT_URL,
+        help=f"Website URL (default: {DEFAULT_URL})",
+    )
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show fetched pages and skipped-page errors")
     return parser.parse_args()

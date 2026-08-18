@@ -12,6 +12,7 @@ const CONTACT_HINT_RE =
 const MARKDOWN_LINK_RE = /\[([^\]]+)]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 const HTML_LINK_RE = /<a\b([^>]*?)>([\s\S]*?)<\/a>/gi;
 const FALLBACK_PATHS = ["/contact", "/contact-us", "/get-in-touch", "/support"];
+const DEFAULT_URL = "https://www.mobiusdigitalgames.com/";
 const NON_PAGE_SUFFIXES = [
   ".avi",
   ".gif",
@@ -258,7 +259,7 @@ export async function scrape(
 
 function usage(): string {
   return [
-    "Usage: npm start -- <url> [--json] [--verbose]",
+    "Usage: npm start -- [url] [--json] [--verbose]",
     "Example: npm start -- https://www.mobiusdigitalgames.com/ --json",
     "",
     "Find emails on a page and its likely contact pages.",
@@ -280,13 +281,13 @@ export async function main(args = process.argv.slice(2)): Promise<number> {
   const positional = args.filter(
     (arg) => !["--json", "--verbose", "-v"].includes(arg),
   );
-  if (positional.length !== 1 || positional[0].startsWith("-")) {
+  if (positional.length > 1 || positional.some((argument) => argument.startsWith("-"))) {
     console.error(usage());
     return 2;
   }
 
   try {
-    const { emails, errors } = await scrape(positional[0], verbose);
+    const { emails, errors } = await scrape(positional[0] ?? DEFAULT_URL, verbose);
     const entries = [...emails.entries()].sort(([first], [second]) =>
       first.localeCompare(second),
     );

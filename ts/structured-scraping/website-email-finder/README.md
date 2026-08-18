@@ -1,6 +1,6 @@
 # Find contact emails on a website
 
-Scan a website and its likely contact pages for public email addresses. The template discovers relevant same-site links, falls back to common contact paths, and can return each address with the pages where it was found.
+Scan a website and its likely contact pages for public email addresses. The template discovers relevant same-site links, falls back to common contact paths, and can return each address with the pages where it was found. It defaults to the Mobius Digital game-studio website.
 
 Template path: `ts/structured-scraping/website-email-finder`
 Runtime: TypeScript, entrypoint `main.ts`.
@@ -11,17 +11,17 @@ Runtime: TypeScript, entrypoint `main.ts`.
 cd ts/structured-scraping/website-email-finder
 cp .env.example .env
 npm install --no-package-lock
-npm start -- https://www.mobiusdigitalgames.com/
+npm start
 ```
 
-Add `NOTTE_API_KEY` to `.env` before running. A scheme is optional, so `mobiusdigitalgames.com` also works.
+Add `NOTTE_API_KEY` to `.env` before running. Pass another website as the optional positional argument; a scheme is optional.
 
 ## Output options
 
 Print only unique email addresses:
 
 ```bash
-npm start -- https://www.mobiusdigitalgames.com/
+npm start
 ```
 
 Return JSON mapping each address to its source pages:
@@ -47,7 +47,7 @@ npm start -- https://www.mobiusdigitalgames.com/ --verbose
 
 ## Inputs
 
-- `url`: required positional website URL.
+- `url`: optional positional website URL. Default: `https://www.mobiusdigitalgames.com/`.
 - `--json`: optional machine-readable output.
 - `--verbose` / `-v`: optional fetch diagnostics.
 - `NOTTE_API_KEY`: required Notte API key, loaded from `.env` or the process environment.
