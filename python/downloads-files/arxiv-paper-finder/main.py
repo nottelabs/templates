@@ -13,7 +13,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 from pathlib import Path
 from typing import Any
 
@@ -202,78 +201,18 @@ def print_viewer_url(session) -> None:
         print(f"Live view: {viewer_url}")
 
 
-def json_from_execution_result(result) -> dict[str, Any]:
-    candidates: list[Any] = [getattr(result, "data", None), getattr(result, "message", None)]
-    data = getattr(result, "data", None)
-    if data is not None:
-        candidates.extend(
-            [
-                getattr(data, "structured", None),
-                getattr(data, "markdown", None),
-            ]
-        )
-
-    for candidate in candidates:
-        parsed = coerce_json_dict(candidate)
-        if parsed is not None:
-            return parsed
-
-    raise RuntimeError(f"Could not parse evaluate_js result: {result}")
-
-
-def coerce_json_dict(candidate: Any) -> dict[str, Any] | None:
-    if candidate is None:
-        return None
-    if hasattr(candidate, "model_dump"):
-        candidate = candidate.model_dump()
-    if isinstance(candidate, str):
-        parsed = parse_json_object(candidate)
-        return coerce_json_dict(parsed) if parsed is not None else None
-    if not isinstance(candidate, dict):
-        return None
-
-    for key in ("result", "value", "output", "data", "structured", "json", "markdown", "message"):
-        nested = candidate.get(key)
-        parsed = coerce_json_dict(nested)
-        if parsed is not None:
-            return parsed
-
-    return candidate
-
-
-def parse_json_object(text: str) -> dict[str, Any] | None:
-    stripped = text.strip()
-    if not stripped:
-        return None
-    if stripped.startswith("```"):
-        stripped = re.sub(r"^```(?:json)?", "", stripped).removesuffix("```").strip()
-
-    for candidate in (stripped, first_json_object(stripped)):
-        if not candidate:
-            continue
-        try:
-            parsed = json.loads(candidate)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(parsed, dict):
-            return parsed
-    return None
-
-
-def first_json_object(text: str) -> str | None:
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end == -1 or end <= start:
-        return None
-    return text[start : end + 1]
-
-
 def evaluate_json(session, code: str, *args: Any) -> dict[str, Any]:
     if args:
         serialized_args = ", ".join(json.dumps(arg) for arg in args)
         code = f"({code})({serialized_args})"
-    result = session.execute(type="evaluate_js", code=code)
-    data = json_from_execution_result(result)
+    # evaluate_js returns the evaluated value as a string, objects as JSON
+    raw = session.evaluate_js(code)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"evaluate_js did not return JSON: {raw[:200]}") from exc
+    if not isinstance(data, dict):
+        raise RuntimeError(f"evaluate_js returned {type(data).__name__}, expected an object: {raw[:200]}")
     if data.get("error"):
         raise RuntimeError(f"{data['error']} on {data.get('url')}")
     return data
