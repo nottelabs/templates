@@ -155,7 +155,6 @@ def browser_probe(client: NotteClient, listing_url: str) -> str:
             open_viewer=True,
             idle_timeout_minutes=3,
             proxies=USE_PROXY,
-            use_file_storage=True,
         ) as session:
             print(f"Session ID: {session.session_id}")
             print_viewer_url(session)

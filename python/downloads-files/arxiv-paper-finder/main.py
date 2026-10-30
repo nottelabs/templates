@@ -253,25 +253,20 @@ def extract_article_details(session, selected_result: PaperResult) -> ArticleDet
     )
 
 
-def storage_file_name(file_info) -> str:
-    return str(getattr(file_info, "name", file_info))
-
-
 def download_storage_files(storage, download_dir: str) -> list[LocalDownload]:
     local_dir = Path(download_dir)
     local_dir.mkdir(parents=True, exist_ok=True)
 
     local_downloads: list[LocalDownload] = []
-    for file_info in storage.list_downloaded_files():
-        file_name = storage_file_name(file_info)
-        downloaded = storage.download(
-            file_name=file_name, local_dir=str(local_dir), force=FORCE_DOWNLOAD
+    for session_file in storage.list("session_download", limit=1000).files:
+        local_path = storage.download(
+            session_file.id, local_dir=str(local_dir), force=FORCE_DOWNLOAD
         )
         local_downloads.append(
             LocalDownload(
-                storage_name=file_name,
-                local_path=str((local_dir / file_name).resolve()),
-                downloaded=downloaded,
+                storage_name=session_file.filename,
+                local_path=str(Path(local_path).resolve()),
+                downloaded=True,
             )
         )
     return local_downloads

@@ -69,7 +69,7 @@ def main() -> None:
         idle_timeout_minutes=2,
         solve_captchas=solve_captchas,
         proxies=True,
-        viewport_height=320,
+        viewport_height=500,
         viewport_width=640,
     ) as session:
         print("Notte session initialized successfully")

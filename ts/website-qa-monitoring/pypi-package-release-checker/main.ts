@@ -129,7 +129,6 @@ async function checkPackageRelease(packageName: string) {
     open_viewer: true,
     idle_timeout_minutes: 2,
     proxies: USE_PROXY,
-    use_file_storage: true,
   }).use(async (session) => {
     console.log("Notte session initialized successfully");
     console.log(`Session ID: ${session.getId()}`);
