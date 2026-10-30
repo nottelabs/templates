@@ -149,7 +149,7 @@ def scrape_category(category_url: str, result_limit: int) -> dict[str, Any]:
     products: list[dict[str, Any]] = []
     metadata: dict[str, Any] = {}
 
-    with client.Session(open_viewer=True, idle_timeout_minutes=5, use_file_storage=True) as session:
+    with client.Session(open_viewer=True, idle_timeout_minutes=5) as session:
         print(f"Session ID: {session.session_id}")
         print_viewer_url(session)
 

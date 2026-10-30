@@ -96,7 +96,7 @@ async function printViewerUrl(session: { status: () => Promise<{ viewer_url?: st
 async function scrapeSearchResults(
   session: {
     execute: (action: unknown) => Promise<unknown>;
-    scrape: <T>(options: { instructions: string; response_format: z.ZodSchema<T>; only_main_content?: boolean; only_images?: boolean; scrape_links?: boolean; scrape_images?: boolean }) => Promise<T>;
+    scrape: <T>(options: { instructions: string; response_format: z.ZodSchema<T>; only_main_content?: boolean; scrape_links?: boolean; scrape_images?: boolean }) => Promise<T>;
   },
   query: string,
   limit: number,
@@ -114,7 +114,6 @@ async function scrapeSearchResults(
       "description summary, visible formats, search relevance, and views last month. " +
       `Return no more than ${limit} datasets.`,
     only_main_content: true,
-    only_images: false,
     scrape_links: true,
     scrape_images: false,
     response_format: SearchResults,
@@ -124,7 +123,7 @@ async function scrapeSearchResults(
 async function scrapeDatasetDetail(
   session: {
     execute: (action: unknown) => Promise<unknown>;
-    scrape: <T>(options: { instructions: string; response_format: z.ZodSchema<T>; only_main_content?: boolean; only_images?: boolean; scrape_links?: boolean; scrape_images?: boolean }) => Promise<T>;
+    scrape: <T>(options: { instructions: string; response_format: z.ZodSchema<T>; only_main_content?: boolean; scrape_links?: boolean; scrape_images?: boolean }) => Promise<T>;
   },
   datasetUrl: string,
 ): Promise<DatasetDetail> {
@@ -138,7 +137,6 @@ async function scrapeDatasetDetail(
       "description, last updated date, homepage/source link, license, any visible metadata " +
       "fields, and available resources/distributions with name, format, and URL.",
     only_main_content: true,
-    only_images: false,
     scrape_links: true,
     scrape_images: false,
     response_format: DatasetDetail,
@@ -157,7 +155,7 @@ async function main() {
   let searchResults: SearchResults | null = null;
   const findings: Array<{ search_result: DatasetSearchResult; detail: DatasetDetail | null; detail_error: string | null }> = [];
 
-  await client.Session({ open_viewer: true, idle_timeout_minutes: 5, use_file_storage: true }).use(async (session) => {
+  await client.Session({ open_viewer: true, idle_timeout_minutes: 5 }).use(async (session) => {
     console.log(`Session ID: ${session.getId()}`);
     await printViewerUrl(session);
 

@@ -87,7 +87,7 @@ def demo_structured_infobox(client: NotteClient) -> None:
         "or unrelated page chrome."
     )
 
-    with client.Session(open_viewer=True, idle_timeout_minutes=2, use_file_storage=True) as session:
+    with client.Session(open_viewer=True, idle_timeout_minutes=2) as session:
         print(f"Session ID: {session.session_id}")
         print_viewer_url(session)
         print(f"Opening {topic_url}")
@@ -99,7 +99,6 @@ def demo_structured_infobox(client: NotteClient) -> None:
         result = session.scrape(
             instructions=instructions,
             only_main_content=False,
-            only_images=False,
             scrape_links=False,
             scrape_images=False,
             response_format=WikipediaInfobox,

@@ -2,6 +2,8 @@
 
 Use a Notte Agent to research a prediction market and extract odds, prices, volume, and market context.
 
+This template stays on `notte-sdk` 1.9 because SDK 1.10 removed agents.
+
 Template path: `notte-templates/ts/agentic-research/kalshi-research`
 Runtime: TypeScript, entrypoint `main.ts`.
 

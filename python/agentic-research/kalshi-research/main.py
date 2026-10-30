@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#     "notte-sdk",
+#     "notte-sdk<1.10",
 #     "pydantic",
 #     "python-dotenv",
 # ]

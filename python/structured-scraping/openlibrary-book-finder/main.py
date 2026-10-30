@@ -114,7 +114,6 @@ def scrape_visible_results(session, query: str, max_results: int) -> SearchResul
             "Borrow or Preview Only or Locate, rating text, want_to_read text, and work URL."
         ),
         only_main_content=False,
-        only_images=False,
         scrape_links=True,
         scrape_images=False,
         response_format=SearchResults,

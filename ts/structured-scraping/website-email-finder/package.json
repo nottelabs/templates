@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-    "notte-sdk": "^0.0.7"
+    "notte-sdk": "^1.10.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

@@ -131,7 +131,6 @@ def scrape_search_results(session, query: str, limit: int) -> SearchResults:
             f"Return no more than {limit} datasets."
         ),
         only_main_content=True,
-        only_images=False,
         scrape_links=True,
         scrape_images=False,
         response_format=SearchResults,
@@ -150,7 +149,6 @@ def scrape_dataset_detail(session, dataset_url: str) -> DatasetDetail:
             "fields, and available resources/distributions with name, format, and URL."
         ),
         only_main_content=True,
-        only_images=False,
         scrape_links=True,
         scrape_images=False,
         response_format=DatasetDetail,
@@ -169,7 +167,7 @@ def find_datasets(query: str, limit: int) -> DatasetFinderReport:
     client = NotteClient(api_key=api_key)
     search_url = data_gov_search_url(query)
 
-    with client.Session(open_viewer=True, idle_timeout_minutes=5, use_file_storage=True) as session:
+    with client.Session(open_viewer=True, idle_timeout_minutes=5) as session:
         print(f"Session ID: {session.session_id}")
         print_viewer_url(session)
 

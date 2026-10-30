@@ -156,7 +156,6 @@ def check_package_release(package_name: str) -> PackageReleaseReport:
         open_viewer=True,
         idle_timeout_minutes=2,
         proxies=USE_PROXY,
-        use_file_storage=True,
     ) as session:
         print("Notte session initialized successfully")
         print(f"Session ID: {session.session_id}")

@@ -64,7 +64,7 @@ async function main() {
     idle_timeout_minutes: 2,
     solve_captchas: SOLVE_CAPTCHAS,
     proxies: true,
-    viewport_height: 320,
+    viewport_height: 500,
     viewport_width: 640,
   }).use(async (session) => {
     console.log("Notte session initialized successfully");
